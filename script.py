@@ -36,9 +36,9 @@ for i in data['results']:
         path = []
         pages.append({'id':i['id'],'path':i['title']})
         fullpath = 'Confluence/' + '/'.join(getParentTitle(i['parentId'])) + '/' + i['id']        
-        output_file = Path(fullpath)
+        output_file = Path(fullpath + '.md')
         output_file.parent.mkdir(exist_ok=True, parents=True)
         with open(output_file, 'w', encoding='utf-8') as f:
-            f.write(i['body']['storage']['value'])
+            f.write(md(i['body']['storage']['value']))
         
 print('******** Total pages:' + str(len(pages)) + ' *********')
