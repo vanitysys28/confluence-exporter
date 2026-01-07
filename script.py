@@ -3,6 +3,7 @@ import requests
 import re
 from requests.auth import HTTPBasicAuth
 import json
+import datetime
 from dotenv import load_dotenv
 from pathlib import Path
 from markdownify import markdownify as md
@@ -75,6 +76,12 @@ def sanitizeConfluenceTags(content):
     sanitized_content = re.sub(image_pattern,r"<img src=\2></img>",sanitized_content)
     return sanitized_content
 
+def isPageUpdated(page_update_date,file_update_date):
+    posix_page_update_date = datetime.datetime.fromisoformat(page_update_date).timestamp()
+
+    if posix_page_update_date > file_update_date:
+        return True
+
 def main():
     data = getConfluenceSpacesData()
     filterParentPages(data)
@@ -88,11 +95,20 @@ def main():
             output_file = Path(full_path_with_prefix + '.md')
             output_file.parent.mkdir(exist_ok=True, parents=True)
 
-            with open(output_file, 'w', encoding='utf-8') as f:
-                confluence_content = i['body']['storage']['value']
-                sanitized_content = sanitizeConfluenceTags(confluence_content)
-                f.write(md(sanitized_content))
-            
+            if not output_file.is_file():
+                with open(output_file, 'w', encoding='utf-8') as f:
+                    confluence_content = i['body']['storage']['value']
+                    sanitized_content = sanitizeConfluenceTags(confluence_content)
+                    f.write(md(sanitized_content))
+            else:
+                page_update_date = i['version']['createdAt']
+                file_update_date = output_file.stat().st_mtime
+                if isPageUpdated(page_update_date,file_update_date): 
+                    with open(output_file, 'w', encoding='utf-8') as f:
+                        confluence_content = i['body']['storage']['value']
+                        sanitized_content = sanitizeConfluenceTags(confluence_content)
+                        f.write(md(sanitized_content))
+
             pages.append({'id':i['id'],'path':i['title']})
 
 main()
