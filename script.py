@@ -21,10 +21,13 @@ def getConfluenceSpacesData():
     
     response = requests.get(url + endpoint,auth=auth)
     data = response.json()
+
     
-    if(data['_links']['next']):
-        response = requests.get(url + data['_links']['next'], auth=auth)
+    while(data['_links']['next']):
+        response = requests.get(url + response.json()['_links']['next'], auth=auth)
         data['results'].extend(response.json()['results'])
+        if(len(response.json()['results']) < 250):
+            return data
 
     return data
 
@@ -60,7 +63,7 @@ def getParentTitle(data, parent_id):
         else:
             path.insert(0, getConfluenceFoldersData(parent_id)['title'])
             return path
-
+    
     for i in data['results']:
         if i['id'] == parent_id:
             if i['id']!='2564620384':
