@@ -31,16 +31,22 @@ def getConfluenceSpacesData():
 
     return data
 
-def getConfluenceFoldersData(folder):
+def getConfluenceFoldersData(data):
     url = os.getenv('URL')
     endpoint = '/wiki/api/v2/folders/'
     auth = HTTPBasicAuth(os.getenv('EMAIL'), os.getenv('TOKEN'))
     
-    response = requests.get(url + endpoint + folder,auth=auth)
-    data = response.json()
+    folders_data = []
     
-    return data
+    folders_ids = list(set([result['parentId'] for result in data['results'] if result.get('parentType') == 'folder']))
+    for folder_id in folders_ids:
+        response = requests.get(url + endpoint + folder_id,auth=auth)
+        data = response.json()
+        
+        folders_data.append({'id': folder_id,'parentId': data['parentId'],'title': data['title']})
 
+    return folders_data
+    
 def filterParentPages(data):
     for i in data['results']:
         if i['status']!='archived' and i['parentId'] not in parent_ids: 
@@ -53,22 +59,23 @@ def filterBadCharacters(string):
             string = string.replace(character,'_')
     return string
 
-def getParentTitle(data, parent_id):
-    folders = [result['parentId'] for result in data['results'] if result.get('parentType') == 'folder']
-    
-    if parent_id in folders:
-        if getConfluenceFoldersData(parent_id)['parentId']!='2564620384':
-            path.insert(0, getConfluenceFoldersData(parent_id)['title'])
-            return getParentTitle(data, getConfluenceFoldersData(parent_id)['parentId'])
+def getParentTitle(data, folders_data, parent_id):
+    folders_ids = [folder_data['id'] for folder_data in folders_data]
+
+    if parent_id in folders_ids:
+        folder_data = [folder_data for folder_data in folders_data if folder_data['id'] == parent_id][0]
+        if folder_data['parentId'] != '2564620384':
+            path.insert(0, folder_data['title'])
+            return getParentTitle(data, folders_data, folder_data['parentId'])
         else:
-            path.insert(0, getConfluenceFoldersData(parent_id)['title'])
+            path.insert(0, folder_data['title'])
             return path
     
     for i in data['results']:
         if i['id'] == parent_id:
             if i['id']!='2564620384':
                 path.insert(0, filterBadCharacters(i['title']))
-                return getParentTitle(data, i['parentId'])
+                return getParentTitle(data, folders_data, i['parentId'])
             else:
                 return path 
 
@@ -90,6 +97,9 @@ def main():
     exported_pages = []
 
     data = getConfluenceSpacesData()
+    folders_data = getConfluenceFoldersData(data)
+    
+    #TODO: Rename function for better understanding
     filterParentPages(data)
     for i in data['results']:
         if i['status']!='archived' and i['id'] not in parent_ids:
