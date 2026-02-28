@@ -27,7 +27,7 @@ def getConfluenceSpacesData():
         response = requests.get(url + response.json()['_links']['next'], auth=auth)
         data['results'].extend(response.json()['results'])
         if(len(response.json()['results']) < 250):
-            return data
+            break
 
     return data
 
