@@ -10,8 +10,8 @@ from markdownify import markdownify as md
 
 load_dotenv()
 
+#TODO: Remove global variables
 parent_ids = []
-pages = []
 path = []
 
 def getConfluenceSpacesData():
@@ -85,7 +85,10 @@ def isPageUpdated(page_update_date,file_update_date):
     if posix_page_update_date > file_update_date:
         return True
 
+#TODO: Create function checking if file still has same path
 def main():
+    exported_pages = []
+
     data = getConfluenceSpacesData()
     filterParentPages(data)
     for i in data['results']:
@@ -112,8 +115,11 @@ def main():
                         sanitized_content = sanitizeConfluenceTags(confluence_content)
                         f.write(md(sanitized_content))
 
-            pages.append({'id':i['id'],'path':i['title']})
+            #TODO: Create history file of exported pages
+            # This could be used to verify if a file has been moved in the tree
+            exported_pages.append({'id':i['id'],'path':fullpath})
+
+    print('******** Total pages:' + str(len(exported_pages)) + ' *********')
 
 main()
         
-print('******** Total pages:' + str(len(pages)) + ' *********')
