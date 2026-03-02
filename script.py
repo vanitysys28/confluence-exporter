@@ -105,7 +105,7 @@ def main():
         if i['status']!='archived' and i['id'] not in parent_ids:
             global path
             path = []
-            fullpath = 'Confluence/' + '/'.join(getParentTitle(data, i['parentId'])) + '/' + filterBadCharacters(i['title']) 
+            fullpath = 'Confluence/' + '/'.join(getParentTitle(data, folders_data, i['parentId'])) + '/' + filterBadCharacters(i['title']) 
             full_path_with_prefix = f"\\\\?\\{os.path.abspath(fullpath)}"       
 
             output_file = Path(full_path_with_prefix + '.md')
